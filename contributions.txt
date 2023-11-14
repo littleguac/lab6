@@ -1,0 +1,2 @@
+extended Z output to 3 bits, both in the DATAPATH and in the ALU, and coded all of the status register outputs from the ALU 
+We need to make sure that all of the status registers are compatible with the same size inputs and outputs
