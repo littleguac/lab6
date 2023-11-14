@@ -10,8 +10,24 @@ vDFFE #(16) C(.clk(clk),
                 .in(in), 
                 .out(instruct_out));
 
-datapath datapath(clk, readnum, vsel, loada, loadb, shift, asel, bsel, ALUop, loadc, loads,
- 	writenum, write, datapath_in, Z_out, datapath_out);
+datapath datapath(.clk(clk), 
+                .readnum(readnum), 
+                .vsel(vsel), 
+                .loada(loada), 
+                .loadb(loadb), 
+                .shift(shift), 
+                .asel(asel), 
+                .bsel(bsel), 
+                .ALUop(ALUop), 
+                .loadc(loadc), 
+                .loads(loads),
+                .writenum(writenum), 
+                .write(write), 
+                .datpath_in(datapath_in), 
+                .Z_out(Z_out), 
+                .datapath_out(datapath_out));
+
+always
 
 
 endmodule
