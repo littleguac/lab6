@@ -26,7 +26,7 @@ assign Rm = in[2:0];
 always @(*)begin
 
     sximm5 = { {11{imm5[5]}}, imm5};
-    sximm5 = { {8{imm8[8]}}, imm8};
+    sximm8 = { {8{imm8[8]}}, imm8};
 
     case(nsel)
         3'b001: numout = Rm;
