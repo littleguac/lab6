@@ -1,81 +1,87 @@
 module datapath(clk, readnum, vsel, loada, loadb, shift, asel, bsel, ALUop, loadc, loads,
- 	writenum, write, datapath_in, Z_out, datapath_out);
+ 	writenum, write, mdata, sximm8, sximm5, PC, C, N, V, Z );
 
-	input write , loada, loadb, asel, bsel, loadc, loads, clk;
-	input [3:0] vsel;
+	input write, loada, loadb, asel, bsel, loadc, loads, clk;
+	input [1:0] vsel;
 	input [2:0] readnum, writenum;
 	input [1:0] shift, ALUop;
-	input [15:0] datapath_in;
-	output [2:0] Z_out;
-	output [15:0] datapath_out;
 
-	wire [15:0] data_in;
+	input [15:0] mdata;
+	input [15:0] sximm8;
+	input [7:0] PC;
+	input [15:0] sximm5;
+	output [15:0] C; //initializes the inputs and outputs
+	output reg N,V,Z;
+	
+	reg [15:0] data_in;
 	wire [15:0] data_out;
+
 	wire [15:0] regA;
 	wire [15:0] in;
 	wire [15:0] sout;
 	wire [15:0] Ain;
 	wire [15:0] Bin;
-	wire [2:0] Z;
-	wire [15:0] out;
-	wire[15:0] sximm;
+	wire Z_in;
+	wire [15:0] out;  //internal signals
+
+	always_comb begin
+
+	case(vsel)
+
+	2'b00 : data_in = C;
+
+ 	2'b01 : data_in = {8'b00000000,PC};
+
+	2'b10 : data_in = sximm8;
+
+	2'b11 : data_in = mdata;
+
+	default : data_in = 16'bxxxxxxxxxxxxxxxx;
+
+	endcase
+
+	end
 	
 
-	always_comb @(*)begin
-		case(vsel)
-			4'b0001: datapath_in = mdata;
-			4'b0010: datapath_in = sximm8;
-			4'b0100: datapath_in = PC;
-			4'b1000: datapath_in = datapath_out;
-            default: datapath_in = {16{1'bx}};
-		endcase
-	end
+	 
 
+	regfile REGFILE(data_in,writenum,write,readnum,clk,data_out); //initializing regfile module
 
-	regfile REGFILE(.data_in(data_in),
-                    .writenum(writenum),
-                    .write(write),
-                    .readnum(readnum),
-                    .clk(clk),
-                    .data_out(data_out));
+	vDFFE #(16) A(clk,loada,data_out,regA); //initializes register for A input to ALU
 
-	vDFFE #(16) A(.clk(clk),
-                .en(loada),
-                .in(data_out),
-                .out(regA));
+	vDFFE #(16) B(clk,loadb,data_out,in);   //initializes register for B input to ALU
 
-	vDFFE #(16) B(.clk(clk),
-                .en(loadb),
-                .in(data_out),
-                .out(in));
+	shifter U1(in,shift,sout); //initializes shifter module
 
-	shifter U1(.in(in),
-            .shift(shift),
-            .sout(sout));
+	assign Ain = asel ? 16'b0000000000000000 : regA; //multiplexer for A
 
-	assign Ain = asel ? 16'b0000000000000000 : regA;
+	assign Bin = bsel ? sximm5 : sout; //multiplexer for B
 
-	assign Bin = bsel ? sximm : sout;
+	ALU U2(Ain,Bin,ALUop,out,Zin); //the arithmetic Unit
 
-	ALU U2(.Ain(Ain),
-        .Bin(Bin),
-        .ALUop(ALuop),
-        .out(out),
-        .Z(Z));
+	vDFFE #(16) D(clk,loadc,out,C); //register for output
+	vDFFE status(clk,loads,Zin,Z); //register for Z
 
-	vDFFE #(16) C(.clk(clk), 
-                .en(loadc), 
-                .in(out), 
-                .out(datapath_out));
-	vDFFE status(.clk(clk),
-                .en(loads),
-                .in(Z),
-                .out(Z_out));
+	//always_comb begin
+
+	//if(out[15] == 1'b1) begin
+	//N = 1'b1;
+	//end 
+
+	//else begin
+	//N = 1'b1;
+	//end 
+
+	//end
+
+	
+
+	
 
 endmodule
 
 
-module vDFFE(clk, en, in, out);
+module vDFFE(clk, en, in, out); //module for register with load enable
 	
 	parameter n = 1;
 	input clk, en;
@@ -89,3 +95,5 @@ module vDFFE(clk, en, in, out);
 		out = next_state;
 
 endmodule
+
+
