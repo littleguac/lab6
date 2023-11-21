@@ -1,0 +1,39 @@
+if(ALUop == 2'b00)begin
+
+    if(Ain[15] == Bin[15])begin //checks if the inputs are the same sign 
+		samesign = 1'b1;
+    end else begin
+		samesign = 1'b0;
+	end
+	if(out[15] != Bin[15])begin //checks if the inputs and outputs are different signs
+		inoutdiff = 1'b1;
+    end else begin
+		inoutdiff = 1'b0;
+	end
+
+    if(samesign && inoutdiff)begin //overflow register
+		Z[2] = 1'b1;
+    end else begin
+		Z[2] = 1'b0;
+	end
+end
+
+if(ALUop == 2'b01)begin
+
+    if(Ain[15] != Bin[15])begin //checks if the inputs are the same sign 
+		oppsign = 1'b1;
+    end else begin
+		oppsign = 1'b0;
+	end
+	if(out[15] == Bin[15])begin //checks if the inputs and outputs are different signs
+		diff = 1'b1;
+    end else begin
+		diff = 1'b0;
+	end
+
+    if(oppsign && diff)begin //overflow register
+		Z[2] = 1'b1;
+    end else begin
+		Z[2] = 1'b0;
+	end
+end
