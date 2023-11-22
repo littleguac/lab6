@@ -16,6 +16,9 @@ module datapath(clk, readnum, vsel, loada, loadb, shift, asel, bsel, ALUop, load
 	reg [15:0] data_in;
 	wire [15:0] data_out;
 
+	reg oppsign;
+	reg diff;
+
 	wire [15:0] regA;
 	wire [15:0] in;
 	wire [15:0] sout;
@@ -47,9 +50,9 @@ module datapath(clk, readnum, vsel, loada, loadb, shift, asel, bsel, ALUop, load
 
 	regfile REGFILE(data_in,writenum,write,readnum,clk,data_out); //initializing regfile module
 
-	vDFFE #(16) A(clk,loada,data_out,regA); //initializes register for A input to ALU
+	vDFFE1 #(16) A(clk,loada,data_out,regA); //initializes register for A input to ALU
 
-	vDFFE #(16) B(clk,loadb,data_out,in);   //initializes register for B input to ALU
+	vDFFE1 #(16) B(clk,loadb,data_out,in);   //initializes register for B input to ALU
 
 	shifter U1(in,shift,sout); //initializes shifter module
 
@@ -59,20 +62,53 @@ module datapath(clk, readnum, vsel, loada, loadb, shift, asel, bsel, ALUop, load
 
 	ALU U2(Ain,Bin,ALUop,out,Zin); //the arithmetic Unit
 
-	vDFFE #(16) D(clk,loadc,out,C); //register for output
-	vDFFE status(clk,loads,Zin,Z); //register for Z
+	vDFFE1 #(16) D(clk,loadc,out,C); //register for output
 
-	//always_comb begin
+	vDFFE2 status(clk,loads,Zin,Z); //register for Z
+	
+	always @(posedge clk) begin
 
-	//if(out[15] == 1'b1) begin
-	//N = 1'b1;
-	//end 
+	if(ALUop == 2'b01 & loads == 1) begin
 
-	//else begin
-	//N = 1'b1;
-	//end 
+	
 
-	//end
+
+	if(out[15] == 1'b1) begin
+	N = 1'b1;
+	end 
+
+	else begin
+	N = 1'b0;
+	end 
+
+	if(Ain[15] != Bin[15])begin //checks if the inputs are the same sign 
+		oppsign = 1'b1;
+    end else begin
+		oppsign = 1'b0;
+	end
+	if(out[15] == Bin[15])begin //checks if the inputs and outputs are different signs
+		diff = 1'b1;
+    end else begin
+		diff = 1'b0;
+	end
+
+    if(oppsign && diff)begin //overflow register
+		V = 1'b1;
+    end else begin
+		V = 1'b0;
+	end
+
+	end
+
+	else begin
+		
+		
+	
+	end
+
+		
+
+	end
 
 	
 
@@ -81,7 +117,22 @@ module datapath(clk, readnum, vsel, loada, loadb, shift, asel, bsel, ALUop, load
 endmodule
 
 
-module vDFFE(clk, en, in, out); //module for register with load enable
+module vDFFE1(clk, en, in, out); //module for register with load enable
+	
+	parameter n = 1;
+	input clk, en;
+	input [n-1:0] in;
+	output reg [n-1:0] out;
+	wire [n-1:0] next_state;
+
+	assign next_state = en ? in : out;
+
+	always @(posedge clk)
+		out = next_state;
+
+endmodule
+
+module vDFFE2(clk, en, in, out); //module for register with load enable
 	
 	parameter n = 1;
 	input clk, en;
