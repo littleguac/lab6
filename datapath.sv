@@ -7,16 +7,16 @@ module datapath(clk, readnum, vsel, loada, loadb, shift, asel, bsel, ALUop, load
 	input [1:0] shift, ALUop;
 
 	input [15:0] mdata;
-	input [15:0] sximm8;
+	input [15:0] sximm8; //sign extended 8 bit
 	input [7:0] PC;
-	input [15:0] sximm5;
+	input [15:0] sximm5; //sign extended 5 bit
 	output [15:0] C; //initializes the inputs and outputs
-	output reg N,V,Z;
+	output reg N,V,Z; //all of the flags in the status register
 	
 	reg [15:0] data_in;
 	wire [15:0] data_out;
 
-	reg oppsign;
+	reg oppsign; //two signals used for overflow detection in the CMP operation
 	reg diff;
 
 	wire [15:0] regA;
@@ -29,25 +29,15 @@ module datapath(clk, readnum, vsel, loada, loadb, shift, asel, bsel, ALUop, load
 
 	always_comb begin
 
-	case(vsel)
-
-	2'b00 : data_in = C;
-
- 	2'b01 : data_in = {8'b00000000,PC};
-
-	2'b10 : data_in = sximm8;
-
-	2'b11 : data_in = mdata;
-
-	default : data_in = 16'bxxxxxxxxxxxxxxxx;
-
-	endcase
-
+		case(vsel) //updated multiplexer for the extra inputs 
+			2'b00 : data_in = C;
+ 			2'b01 : data_in = {8'b00000000,PC};
+			2'b10 : data_in = sximm8;
+			2'b11 : data_in = mdata;
+			default : data_in = 16'bxxxxxxxxxxxxxxxx;
+		endcase
 	end
 	
-
-	 
-
 	regfile REGFILE(data_in,writenum,write,readnum,clk,data_out); //initializing regfile module
 
 	vDFFE1 #(16) A(clk,loada,data_out,regA); //initializes register for A input to ALU
@@ -56,7 +46,7 @@ module datapath(clk, readnum, vsel, loada, loadb, shift, asel, bsel, ALUop, load
 
 	shifter U1(in,shift,sout); //initializes shifter module
 
-	assign Ain = asel ? 16'b0000000000000000 : regA; //multiplexer for A
+	assign Ain = asel ? {16{1'b0}} : regA; //multiplexer for A
 
 	assign Bin = bsel ? sximm5 : sout; //multiplexer for B
 
@@ -66,54 +56,33 @@ module datapath(clk, readnum, vsel, loada, loadb, shift, asel, bsel, ALUop, load
 
 	vDFFE2 status(clk,loads,Zin,Z); //register for Z
 	
-	always @(posedge clk) begin
+always @(posedge clk) begin
+	if(ALUop == 2'b01 & loads == 1) begin    //if the ALU is in the CMP instruction
+		if(out[15] == 1'b1) begin
+			N = 1'b1;		//if the ouptut is signed negative, then the N flag is set
+		end 
+		else begin
+			N = 1'b0;		//else the N flag is set to 0
+		end 	
 
-	if(ALUop == 2'b01 & loads == 1) begin
-
-	
-
-
-	if(out[15] == 1'b1) begin
-	N = 1'b1;
-	end 
-
-	else begin
-	N = 1'b0;
-	end 
-
-	if(Ain[15] != Bin[15])begin //checks if the inputs are the same sign 
-		oppsign = 1'b1;
-    end else begin
-		oppsign = 1'b0;
-	end
-	if(out[15] == Bin[15])begin //checks if the inputs and outputs are different signs
-		diff = 1'b1;
-    end else begin
-		diff = 1'b0;
-	end
-
-    if(oppsign && diff)begin //overflow register
-		V = 1'b1;
-    end else begin
-		V = 1'b0;
-	end
-
-	end
-
-	else begin
+		if(Ain[15] != Bin[15])begin 	//in CMP instruction checks for overflow during subtraction, starting by if the two inputs are opposite sign
+			oppsign = 1'b1;
+    		end else begin
+			oppsign = 1'b0;		//else overflow is not possible
+		end
+		if(out[15] == Bin[15])begin 	//checks if the output and first operand are different signs
+			diff = 1'b1;
+    		end else begin
+			diff = 1'b0;
+		end
 		
-		
-	
+		if(oppsign && diff)begin //if both of those conditiosn are true, then sets the overflow flag
+			V = 1'b1;
+    		end else begin		//if either of these conditions are not true, overflow could not occur
+			V = 1'b0;
+		end
 	end
-
-		
-
-	end
-
-	
-
-	
-
+end
 endmodule
 
 
