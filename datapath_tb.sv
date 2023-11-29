@@ -227,7 +227,7 @@ module datapath_tb;
 	sximm8 = 16'b0000000000000001;
 	writenum = 3'b111;
 	write = 1'b1;
-	vsel = 2'b10;
+	vsel =2'b10;
 	#10;
 	write = 1'b0;
 	//writes a new value to R7 and checks

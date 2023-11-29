@@ -1,4 +1,4 @@
-module instructiondecoder(in, nsel, opcode, op, ALUop, sximm5, sximm8, shift, readnum, writenum);
+module instruction_decoder(in, nsel, opcode, op, ALUop, sximm5, sximm8, shift, readnum, writenum);
 input [15:0] in;
 input [2:0] nsel;
 output reg [2:0] opcode;
@@ -53,11 +53,11 @@ always_comb begin
 		end
    	endcase
 
-	assign ALUop = in[12:11];
-	assign shift = in[4:3];
+	ALUop = in[12:11];
+	shift = in[4:3];
 
-	assign opcode = in[15:13];
-	assign op = in[12:11];
+	opcode = in[15:13];
+	op = in[12:11];
 
 	
 	
